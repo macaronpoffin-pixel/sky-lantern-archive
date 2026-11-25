@@ -1,0 +1,189 @@
+@charset "UTF-8";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: transparent; /* OBS透過用 */
+  font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 上昇アニメーションのラッパー */
+.lantern-wrapper {
+  position: absolute;
+  bottom: -320px;
+  left: var(--start-x, 50%);
+  animation: floatUp var(--duration, 16s) linear forwards;
+  will-change: transform, opacity;
+}
+
+/* ランタン本体と横揺れアニメーション */
+.lantern {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(var(--scale, 1));
+  animation: sway var(--sway-duration, 4s) ease-in-out infinite alternate;
+}
+
+/* 縦長の灯籠部分：彩度・明度を高めた鮮やかな黄色ベース */
+.lantern-body {
+  --hue: 46deg;
+  position: relative;
+  flex-shrink: 0;
+  width: fit-content;
+  min-width: 118px;
+  max-width: 176px;
+  min-height: 130px;
+  padding: 28px 16px 36px;
+  border-radius: 15% 15% 15% 15% / 10% 10% 10% 10%;
+  background: radial-gradient(
+    ellipse at 50% 78%,
+    hsla(calc(var(--hue) + 8deg), 100%, 96%, 0.99) 0%,
+    hsla(var(--hue), 100%, 76%, 0.96) 46%,
+    hsla(calc(var(--hue) - 7deg), 100%, 62%, 0.93) 78%,
+    hsla(calc(var(--hue) - 12deg), 96%, 48%, 0.95) 100%
+  );
+  box-shadow:
+    0 0 24px hsla(var(--hue), 100%, 68%, 0.85),
+    0 0 52px hsla(calc(var(--hue) - 6deg), 100%, 58%, 0.5),
+    inset 0 -18px 28px hsla(calc(var(--hue) + 10deg), 100%, 90%, 0.85),
+    inset 0 12px 22px hsla(calc(var(--hue) - 14deg), 92%, 42%, 0.28);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 和紙の澄んだ光ムラ */
+.lantern-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 85%,
+    hsla(calc(var(--hue) + 10deg), 100%, 97%, 0.72) 0%,
+    hsla(var(--hue), 100%, 72%, 0.24) 55%,
+    transparent 75%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* 下部の火種 */
+.lantern-light {
+  position: absolute;
+  bottom: 10px;
+  width: 28px;
+  height: 16px;
+  background: radial-gradient(
+    ellipse at center,
+    #ffffff 0%,
+    hsla(calc(var(--hue) + 10deg), 100%, 88%, 0.98) 45%,
+    hsla(calc(var(--hue) - 8deg), 100%, 64%, 0.82) 80%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  filter: blur(3px);
+  z-index: 1;
+  animation: flameGentle 2.2s ease-in-out infinite alternate;
+}
+
+/* ランタン下部の竹枠（底面） */
+.lantern-bottom {
+  flex-shrink: 0;
+  width: 60px;
+  height: 6px;
+  background: linear-gradient(90deg, #4a200a 0%, #853d16 50%, #4a200a 100%);
+  border-radius: 3px;
+  margin-top: -4px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+}
+
+/* テキストデザイン */
+.comment-content {
+  position: relative;
+  z-index: 2;
+  color: #3a1504;
+  width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.user-name {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.78;
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.comment-text {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-shadow: 0 0 8px rgba(255, 253, 235, 0.9);
+}
+
+/* 絵文字・スタンプのサイズ調整 */
+.comment-text img {
+  height: 1.35em;
+  vertical-align: middle;
+}
+
+/* 空へ昇っていく動き */
+@keyframes floatUp {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(-130vh);
+    opacity: 0;
+  }
+}
+
+/* 風に吹かれる横揺れ */
+@keyframes sway {
+  0% {
+    transform: translateX(-18px) rotate(-3.5deg) scale(var(--scale, 1));
+  }
+  100% {
+    transform: translateX(18px) rotate(3.5deg) scale(var(--scale, 1));
+  }
+}
+
+/* 火種の穏やかな揺らぎ */
+@keyframes flameGentle {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}

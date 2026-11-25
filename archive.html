@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sky Lantern Archive - 一覧表示</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    html, body {
+      overflow-y: auto;
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      background-attachment: fixed;
+      color: #f8f5e6;
+      min-height: 100vh;
+    }
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20px 30px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 90px 140px, #ffeaa7, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 160px 80px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 250px 210px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 340px 50px, #ffd32a, rgba(0,0,0,0));
+      background-size: 400px 300px;
+      opacity: 0.55;
+      z-index: 0;
+    }
+
+    .archive-app {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    .archive-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 220, 130, 0.2);
+      margin-bottom: 32px;
+    }
+
+    .header-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffe28a;
+      text-shadow: 0 0 12px rgba(255, 190, 60, 0.5);
+      letter-spacing: 0.04em;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      color: rgba(255, 245, 220, 0.72);
+      margin-top: 4px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 215, 120, 0.35);
+      border-radius: 999px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      min-width: 210px;
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .search-input:focus {
+      border-color: #ffd15c;
+      box-shadow: 0 0 10px rgba(255, 200, 70, 0.3);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 200, 70, 0.16);
+      border: 1px solid rgba(255, 200, 70, 0.45);
+      color: #ffe699;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: rgba(255, 200, 70, 0.3);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(255, 205, 70, 0.35), rgba(255, 150, 40, 0.35));
+      border-color: #ffd15c;
+      color: #fff8dc;
+      box-shadow: 0 0 14px rgba(255, 190, 60, 0.25);
+    }
+
+    .btn-danger {
+      background: rgba(255, 90, 90, 0.14);
+      border-color: rgba(255, 100, 100, 0.4);
+      color: #ffaaaa;
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 90, 90, 0.28);
+    }
+
+    .lantern-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 36px 24px;
+      justify-items: center;
+    }
+
+    .archive-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.25s ease;
+    }
+
+    .archive-item:hover {
+      transform: translateY(-6px) scale(1.03);
+    }
+
+    .archive-item .lantern {
+      animation: swayGentle 4.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes swayGentle {
+      0% { transform: rotate(-1.8deg); }
+      100% { transform: rotate(1.8deg); }
+    }
+
+    .timestamp {
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(255, 235, 180, 0.65);
+      letter-spacing: 0.04em;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: rgba(255, 240, 200, 0.65);
+      line-height: 1.8;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #141a26;
+      border: 1px solid rgba(255, 210, 100, 0.4);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 440px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-card .lantern-body {
+      max-width: 280px;
+      min-width: 200px;
+      min-height: 180px;
+    }
+
+    .modal-meta {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255, 240, 200, 0.8);
+    }
+
+    .modal-close {
+      margin-top: 20px;
+      width: 100%;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <div id="archive-app" data-mode="list" class="archive-app">
+    <header class="archive-header">
+      <div class="header-title">
+        <h1>空に昇ったランタン一覧（{{ filteredLanterns.length }}基）</h1>
+        <p>配信中に夜空へ放たれたコメントの記録です（クリックで拡大確認）</p>
+      </div>
+
+      <div class="controls">
+        <a href="./archive-sky.html" class="btn btn-primary">夜空でふわふわ飛ばす</a>
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="名前やメッセージで検索..."
+        />
+        <button class="btn" @click="addDemoLantern">+ テスト追加</button>
+        <button class="btn" @click="exportJson">記録を保存 (JSON)</button>
+        <button class="btn btn-danger" @click="clearArchive">履歴クリア</button>
+      </div>
+    </header>
+
+    <div v-if="filteredLanterns.length === 0" class="empty-state">
+      <p>まだ空に昇ったランタンがありません。<br />ワンコメでコメントを受信するか、「+ テスト追加」で動作を確認できます。</p>
+    </div>
+
+    <div v-else class="lantern-grid">
+      <div
+        v-for="item in filteredLanterns"
+        :key="item.id"
+        class="archive-item"
+        @click="selectedLantern = item"
+      >
+        <div class="lantern">
+          <div class="lantern-body" :style="{ '--hue': item.hue }">
+            <div class="lantern-light"></div>
+            <div class="comment-content">
+              <div class="user-name">{{ item.name }}</div>
+              <div class="comment-text" v-html="item.comment"></div>
+            </div>
+          </div>
+          <div class="lantern-bottom"></div>
+        </div>
+        <div class="timestamp">{{ item.time }}</div>
+      </div>
+    </div>
+
+    <div v-if="selectedLantern" class="modal-backdrop" @click.self="selectedLantern = null">
+      <div class="modal-card">
+        <div class="lantern">
+          <div class="lantern-body" :style="{ '--hue': selectedLantern.hue }">
+            <div class="lantern-light"></div>
+            <div class="comment-content">
+              <div class="user-name">{{ selectedLantern.name }}</div>
+              <div class="comment-text" v-html="selectedLantern.comment"></div>
+            </div>
+          </div>
+          <div class="lantern-bottom"></div>
+        </div>
+        <div class="modal-meta">
+          投稿者: <strong>{{ selectedLantern.name }}</strong><br />
+          時刻: {{ selectedLantern.time }}
+        </div>
+        <button class="btn modal-close" @click="selectedLantern = null">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../__origin/js/vue3.min.js"></script>
+  <script src="../__origin/js/onesdk.js"></script>
+  <script src="./archive.js"></script>
+</body>
+</html>

@@ -1,3 +1,21 @@
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDRp14EfXQNn-R-vR_YKAS3Tw1cI2hZFCk",
+  authDomain: "sky-lantern-cccec.firebaseapp.com",
+  databaseURL: "https://sky-lantern-cccec-default-rtdb.firebaseio.com",
+  projectId: "sky-lantern-cccec",
+  storageBucket: "sky-lantern-cccec.firebasestorage.app",
+  messagingSenderId: "568669120282",
+  appId: "1:568669120282:web:f5e717081a016554276ea3",
+};
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getDatabase,
+  ref as dbRef,
+  onValue,
+  set,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
 const { createApp, ref, computed, onMounted } = Vue;
 
 const STORAGE_KEY = 'onecomme_sky_lantern_archive_v1';
@@ -20,6 +38,10 @@ function formatTime(timestamp) {
   });
 }
 
+function sanitizeId(id) {
+  return String(id).replace(/[.#$[\]/]/g, '_');
+}
+
 const app = createApp({
   setup() {
     const lanterns = ref([]);
@@ -27,6 +49,7 @@ const app = createApp({
     const hudHidden = ref(false);
     let hudTimer = null;
     let isInitialLoadDone = false;
+    let db = null;
 
     const isTransparent = computed(() => {
       const params = new URLSearchParams(window.location.search);
@@ -98,15 +121,15 @@ const app = createApp({
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          lanterns.value = parsed;
-          parsed.slice(0, MAX_SKY_DISPLAY).forEach((item) => {
-            ensureSkyStyle(item, true);
-          });
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            lanterns.value = parsed;
+            parsed.slice(0, MAX_SKY_DISPLAY).forEach((item) => {
+              ensureSkyStyle(item, true);
+            });
+          }
         }
       } catch (e) {
         console.error('履歴の読み込みに失敗しました:', e);
-      } finally {
-        isInitialLoadDone = true;
       }
     };
 
@@ -118,14 +141,60 @@ const app = createApp({
       }
     };
 
+    const applyRemoteLanterns = (raw) => {
+      const entries = Object.entries(raw || {});
+      const list = entries.map(([key, val]) => ({
+        id: val.id || key,
+        comment: val.comment || '',
+        time: val.time || formatTime(val.timestamp),
+        timestamp: val.timestamp || 0,
+        hue: val.hue || generateYellowHue(),
+      }));
+
+      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      const prevIds = new Set(lanterns.value.map((item) => item.id));
+      const currentIds = new Set(list.map((item) => item.id));
+
+      for (const cachedId of skyStyleCache.keys()) {
+        if (!currentIds.has(cachedId)) {
+          skyStyleCache.delete(cachedId);
+        }
+      }
+      if (selectedLantern.value && !currentIds.has(selectedLantern.value.id)) {
+        selectedLantern.value = null;
+      }
+
+      if (!isInitialLoadDone) {
+        list.slice(0, MAX_SKY_DISPLAY).forEach((item) => {
+          ensureSkyStyle(item, true);
+        });
+        isInitialLoadDone = true;
+      } else {
+        const nextLaunched = new Set(initialLaunchedIds.value);
+        list.slice(0, MAX_SKY_DISPLAY).forEach((item) => {
+          if (!prevIds.has(item.id)) {
+            ensureSkyStyle(item, false);
+            nextLaunched.add(item.id);
+          }
+        });
+        initialLaunchedIds.value = nextLaunched;
+      }
+
+      lanterns.value = list;
+      saveToStorage();
+    };
+
     const registerLantern = (data) => {
       if (!data || !data.id) return;
       if (lanterns.value.some((item) => item.id === data.id)) return;
 
+      const ts = data.timestamp || Date.now();
       const newItem = {
         id: data.id,
         comment: data.comment || '',
-        time: formatTime(data.timestamp),
+        time: formatTime(ts),
+        timestamp: ts,
         hue: generateYellowHue(),
       };
 
@@ -138,6 +207,13 @@ const app = createApp({
 
       lanterns.value.unshift(newItem);
       saveToStorage();
+
+      if (db) {
+        const safeId = sanitizeId(newItem.id);
+        set(dbRef(db, `lanterns/${safeId}`), newItem).catch((err) => {
+          console.error('Firebaseへの保存に失敗しました:', err);
+        });
+      }
     };
 
     const skyLanterns = computed(() => {
@@ -147,6 +223,19 @@ const app = createApp({
     onMounted(async () => {
       loadFromStorage();
       wakeHud();
+
+      try {
+        const fbApp = initializeApp(FIREBASE_CONFIG);
+        db = getDatabase(fbApp);
+        const lanternsRef = dbRef(db, 'lanterns');
+
+        onValue(lanternsRef, (snapshot) => {
+          applyRemoteLanterns(snapshot.val());
+        });
+      } catch (err) {
+        console.error('Firebaseの初期化に失敗しました:', err);
+        isInitialLoadDone = true;
+      }
 
       if (typeof OneSDK !== 'undefined') {
         try {

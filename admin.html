@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sky Lantern Admin - ランタン管理画面</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    body.admin-bg {
+      background: linear-gradient(180deg, #090e1a 0%, #111b30 100%);
+      color: #f4f7fc;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px 16px 60px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .admin-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .admin-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+      border-radius: 14px;
+      background: rgba(18, 27, 46, 0.85);
+      border: 1px solid rgba(255, 210, 110, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .admin-title {
+      margin: 0;
+      font-size: 20px;
+      color: #ffe38e;
+    }
+
+    .admin-sub {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: rgba(235, 242, 255, 0.72);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: background 0.18s ease, opacity 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-link {
+      background: rgba(255, 205, 80, 0.16);
+      border-color: rgba(255, 205, 80, 0.45);
+      color: #fff3cf;
+    }
+
+    .btn-link:hover {
+      background: rgba(255, 205, 80, 0.28);
+    }
+
+    .btn-danger-outline {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #fca5a5;
+    }
+
+    .btn-danger-outline:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.26);
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      border-color: #f87171;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(11, 17, 30, 0.9);
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .search-input::placeholder {
+      color: rgba(220, 230, 250, 0.45);
+    }
+
+    .status-banner {
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      color: #a7f3d0;
+    }
+
+    .status-banner.is-error {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #fecaca;
+    }
+
+    .lantern-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .lantern-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(18, 27, 46, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .lantern-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(235, 242, 255, 0.68);
+      margin-bottom: 6px;
+    }
+
+    .hue-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      background: hsl(46, 95%, 60%);
+      box-shadow: 0 0 8px hsl(46, 95%, 60%);
+    }
+
+    .lantern-comment {
+      font-size: 14px;
+      line-height: 1.55;
+      color: #ffffff;
+      word-break: break-word;
+    }
+
+    .lantern-comment img {
+      max-height: 1.4em;
+      vertical-align: middle;
+    }
+
+    .empty-box {
+      text-align: center;
+      padding: 48px 20px;
+      border-radius: 12px;
+      background: rgba(18, 27, 46, 0.55);
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      color: rgba(235, 242, 255, 0.68);
+    }
+  </style>
+</head>
+<body class="admin-bg">
+  <div id="admin-app" class="admin-wrap">
+    <header class="admin-header">
+      <div>
+        <h1 class="admin-title">Sky Lantern 管理画面</h1>
+        <p class="admin-sub">登録済みランタン：<strong>{{ lanterns.length }}</strong> 件（夜空表示上限：50件）</p>
+      </div>
+      <div class="header-actions">
+        <a class="btn btn-link" href="./archive-sky.html" target="_blank" rel="noopener">夜空ページを開く</a>
+        <button
+          class="btn btn-danger-outline"
+          type="button"
+          :disabled="lanterns.length === 0 || isDeletingAll"
+          @click="deleteAllLanterns"
+        >
+          {{ isDeletingAll ? '全削除中...' : 'すべて削除' }}
+        </button>
+      </div>
+    </header>
+
+    <div v-if="statusMessage" class="status-banner" :class="{ 'is-error': isError }">
+      {{ statusMessage }}
+    </div>
+
+    <div class="toolbar">
+      <input
+        v-model="keyword"
+        type="search"
+        class="search-input"
+        placeholder="コメント内容や時刻で絞り込み..."
+      />
+    </div>
+
+    <div v-if="filteredLanterns.length === 0" class="empty-box">
+      {{ lanterns.length === 0 ? '現在、登録されているランタンはありません。' : '条件に一致するランタンがありません。' }}
+    </div>
+
+    <div v-else class="lantern-list">
+      <div v-for="item in filteredLanterns" :key="item.dbKey" class="lantern-row">
+        <div>
+          <div class="lantern-meta">
+            <span class="hue-dot" :style="{ background: `hsl(${parseInt(item.hue, 10) || 46}, 95%, 60%)` }"></span>
+            <span>時刻: {{ item.time }}</span>
+            <span>ID: {{ item.id }}</span>
+          </div>
+          <div class="lantern-comment" v-html="item.comment || '（コメントなし）'"></div>
+        </div>
+        <button
+          class="btn btn-danger"
+          type="button"
+          :disabled="deletingKeys.has(item.dbKey)"
+          @click="deleteLantern(item)"
+        >
+          {{ deletingKeys.has(item.dbKey) ? '削除中...' : '削除' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getDatabase,
+      ref as dbRef,
+      onValue,
+      remove,
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDRp14EfXQNn-R-vR_YKAS3Tw1cI2hZFCk",
+      authDomain: "sky-lantern-cccec.firebaseapp.com",
+      databaseURL: "https://sky-lantern-cccec-default-rtdb.firebaseio.com",
+      projectId: "sky-lantern-cccec",
+      storageBucket: "sky-lantern-cccec.firebasestorage.app",
+      messagingSenderId: "568669120282",
+      appId: "1:568669120282:web:f5e717081a016554276ea3",
+    };
+
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    function formatTime(timestamp) {
+      const d = timestamp ? new Date(timestamp) : new Date();
+      return d.toLocaleTimeString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    }
+
+    function stripHtml(html) {
+      const div = document.createElement('div');
+      div.innerHTML = html || '';
+      return div.textContent || div.innerText || '';
+    }
+
+    createApp({
+      setup() {
+        const lanterns = ref([]);
+        const keyword = ref('');
+        const statusMessage = ref('Firebase Realtime Database に接続中...');
+        const isError = ref(false);
+        const deletingKeys = ref(new Set());
+        const isDeletingAll = ref(false);
+
+        let db = null;
+
+        const filteredLanterns = computed(() => {
+          const q = keyword.value.trim().toLowerCase();
+          if (!q) return lanterns.value;
+          return lanterns.value.filter((item) => {
+            const plainText = stripHtml(item.comment).toLowerCase();
+            const timeText = String(item.time || '').toLowerCase();
+            const idText = String(item.id || '').toLowerCase();
+            return plainText.includes(q) || timeText.includes(q) || idText.includes(q);
+          });
+        });
+
+        const setStatus = (msg, error = false) => {
+          statusMessage.value = msg;
+          isError.value = error;
+        };
+
+        const deleteLantern = async (item) => {
+          if (!db || !item?.dbKey) return;
+          const plain = stripHtml(item.comment) || item.id;
+          const ok = window.confirm(`このランタンを削除しますか？\n「${plain}」`);
+          if (!ok) return;
+
+          const next = new Set(deletingKeys.value);
+          next.add(item.dbKey);
+          deletingKeys.value = next;
+
+          try {
+            await remove(dbRef(db, `lanterns/${item.dbKey}`));
+            setStatus(`削除しました: ${plain}`, false);
+          } catch (err) {
+            console.error(err);
+            setStatus(`削除に失敗しました: ${err.message}`, true);
+          } finally {
+            const after = new Set(deletingKeys.value);
+            after.delete(item.dbKey);
+            deletingKeys.value = after;
+          }
+        };
+
+        const deleteAllLanterns = async () => {
+          if (!db || lanterns.value.length === 0) return;
+          const ok = window.confirm(
+            `登録されている全 ${lanterns.value.length} 件のランタンを削除しますか？\nこの操作は元に戻せません。`
+          );
+          if (!ok) return;
+
+          isDeletingAll.value = true;
+          try {
+            await remove(dbRef(db, 'lanterns'));
+            setStatus('すべてのランタンを削除しました。', false);
+          } catch (err) {
+            console.error(err);
+            setStatus(`全削除に失敗しました: ${err.message}`, true);
+          } finally {
+            isDeletingAll.value = false;
+          }
+        };
+
+        onMounted(() => {
+          try {
+            const fbApp = initializeApp(FIREBASE_CONFIG);
+            db = getDatabase(fbApp);
+            const lanternsRef = dbRef(db, 'lanterns');
+
+            onValue(
+              lanternsRef,
+              (snapshot) => {
+                const raw = snapshot.val() || {};
+                const list = Object.entries(raw).map(([key, val]) => ({
+                  dbKey: key,
+                  id: val.id || key,
+                  comment: val.comment || '',
+                  time: val.time || formatTime(val.timestamp),
+                  timestamp: val.timestamp || 0,
+                  hue: val.hue || '46deg',
+                }));
+                list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                lanterns.value = list;
+                setStatus('リアルタイム同期中（削除すると夜空ページからも反映されます）', false);
+              },
+              (err) => {
+                console.error(err);
+                setStatus(`読み込みエラー: ${err.message}`, true);
+              }
+            );
+          } catch (err) {
+            console.error(err);
+            setStatus(`初期化エラー: ${err.message}`, true);
+          }
+        });
+
+        return {
+          lanterns,
+          keyword,
+          statusMessage,
+          isError,
+          deletingKeys,
+          isDeletingAll,
+          filteredLanterns,
+          deleteLantern,
+          deleteAllLanterns,
+        };
+      },
+    }).mount('#admin-app');
+  </script>
+</body>
+</html>
